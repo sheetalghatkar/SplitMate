@@ -150,6 +150,7 @@ dist
 
 # Ignore iOS build artifacts (if applicable)
 ios/build/
+ios/Pods/
 DerivedData/
 
 # Ignore React Native packager files
