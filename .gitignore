@@ -134,3 +134,25 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+# --- Additions for Android/React Native projects ---
+
+# Ignore Android build artifacts
+/android/.gradle
+/android/.idea
+/android/local.properties
+/android/app/build/
+/android/build/
+
+# Ignore APKs and native .so files
+*.apk
+*.ap_
+*.so
+
+# Ignore iOS build artifacts (if applicable)
+ios/build/
+DerivedData/
+
+# Ignore React Native packager files
+.expo/
+.expo-shared/
+*.keystore
