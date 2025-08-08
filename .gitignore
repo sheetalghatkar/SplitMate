@@ -157,3 +157,12 @@ DerivedData/
 .expo/
 .expo-shared/
 *.keystore
+
+
+# CMake and Ninja build artifacts
+*.ninja_deps
+*.ninja_log
+*.bin
+
+# Ignore .cxx (Native build output)
+android/app/.cxx/

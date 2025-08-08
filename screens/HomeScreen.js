@@ -7,16 +7,14 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import {
-  useSafeAreaInsets,
-  SafeAreaProvider,
-} from 'react-native-safe-area-context';
-import DropDownPicker from 'react-native-dropdown-picker';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import SettledExpenses from './SettledExpenses';
 import OutstandingExpenses from './OutstandingExpenses';
+import {CURRENCY_OPTION} from './Constant';
+import GroupEditModal from './GroupEditModal'; // ✅ import reusable modal
 
-function ExpenseTabs({sortValue, setSortValue}) {
+function ExpenseTabs({sortValue, setSortValue, expenses}) {
   const [currentTab, setCurrentTab] = useState('Outstanding Expenses');
   const [showPopover, setShowPopover] = useState(false);
 
@@ -27,7 +25,6 @@ function ExpenseTabs({sortValue, setSortValue}) {
 
   return (
     <View style={{flex: 1}}>
-      {/* Tab Bar */}
       <View style={styles.customTabBar}>
         {['Outstanding Expenses', 'Settled Expenses'].map((tab, index) => {
           const focused = currentTab === tab;
@@ -45,45 +42,47 @@ function ExpenseTabs({sortValue, setSortValue}) {
         })}
       </View>
 
-      {/* Sort By Button */}
       <TouchableOpacity
         onPress={() => setShowPopover(prev => !prev)}
         style={styles.sortButton}>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <Text style={styles.sortButtonText}>Sort By</Text>
           <Image
-            source={require('../assets/sort.png')} // update path if needed
+            source={require('../assets/sort.png')}
             style={styles.sortIcon}
           />
         </View>
       </TouchableOpacity>
 
-      {/* Popover Style Sort Options */}
       {showPopover && (
         <View style={styles.popover}>
-          <TouchableOpacity
-            onPress={() => handleSort('date_desc')}
-            style={styles.popoverItem}>
-            <Text style={styles.popoverText}>Date Descending</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleSort('date_asc')}
-            style={styles.popoverItem}>
-            <Text style={styles.popoverText}>Date Ascending</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleSort('name')}
-            style={styles.popoverItem}>
-            <Text style={styles.popoverText}>Name</Text>
-          </TouchableOpacity>
+          {[
+            {label: 'Date Descending', value: 'date_desc'},
+            {label: 'Date Ascending', value: 'date_asc'},
+            {label: 'Name', value: 'name'},
+          ].map(({label, value}) => (
+            <TouchableOpacity
+              key={value}
+              onPress={() => handleSort(value)}
+              style={[
+                styles.popoverItem,
+                sortValue === value && styles.popoverItemSelected,
+              ]}>
+              <Text
+                style={[
+                  styles.popoverText,
+                  sortValue === value && styles.popoverTextSelected,
+                ]}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       )}
 
-      {/* Tab Content */}
-      {/* <View style={{flex: 1, marginTop: showPopover ? 50 : 10}}> */}
       <View style={{flex: 1, marginTop: 10}}>
         {currentTab === 'Outstanding Expenses' ? (
-          <OutstandingExpenses sortValue={sortValue} />
+          <OutstandingExpenses sortValue={sortValue} expenses={expenses} />
         ) : (
           <SettledExpenses sortValue={sortValue} />
         )}
@@ -92,38 +91,99 @@ function ExpenseTabs({sortValue, setSortValue}) {
   );
 }
 
-function HomeScreenInner() {
+function HomeScreenInner({navigation}) {
   const insets = useSafeAreaInsets();
-
   const [sortValue, setSortValue] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [originalExpenses, setOriginalExpenses] = useState([
+    {
+      id: '1',
+      name: 'Dinner at Tehta',
+      amount: 450,
+      currency: '₹ INR',
+      date: '2025-06-20',
+    },
+    {
+      id: '2',
+      name: 'Movie Night',
+      amount: 320,
+      currency: '₹ INR',
+      date: '2025-06-19',
+    },
+    {
+      id: '3',
+      name: 'Groceries',
+      amount: 780,
+      currency: '₹ INR',
+      date: '2025-06-18',
+    },
+    {
+      id: '4',
+      name: 'Petrol',
+      amount: 1200,
+      currency: '₹ INR',
+      date: '2025-06-15',
+    },
+    {
+      id: '5',
+      name: 'Snacks',
+      amount: 150,
+      currency: '₹ INR',
+      date: '2025-06-10',
+    },
+  ]);
+
+  const handleSaveGroup = ({groupName, currency}) => {
+    const newExpense = {
+      id: (originalExpenses.length + 1).toString(),
+      name: groupName,
+      currency,
+      amount: 0,
+      date: new Date().toISOString(),
+    };
+
+    setOriginalExpenses(prev => {
+      const updated = [newExpense, ...prev];
+      updated.sort((a, b) => new Date(b.date) - new Date(a.date));
+      return updated;
+    });
+
+    navigation.navigate('ExpenseMain', {groupName, currency});
+  };
 
   return (
     <ImageBackground
-      source={require('../assets/wallpaper.png')} 
+      source={require('../assets/wallpaper.png')}
       style={styles.background}>
-      <View style={[styles.header, {paddingTop: insets.top + 10}]}>
-        <Text style={styles.text}>SplitMate</Text>
-      </View>
-
       <TouchableOpacity
-        style={[styles.addButton, {marginTop: insets.top > 20 ? 110 : 60}]}
-        onPress={() => console.log('Add button pressed')}>
+        style={[styles.addButton, {marginTop: 20}]}
+        onPress={() => setModalVisible(true)}>
         <Text style={styles.addButtonText}>Create New Expense Group</Text>
       </TouchableOpacity>
 
       <View style={{flex: 1, marginHorizontal: 5}}>
-        <ExpenseTabs sortValue={sortValue} setSortValue={setSortValue} />
+        <ExpenseTabs
+          sortValue={sortValue}
+          setSortValue={setSortValue}
+          expenses={originalExpenses}
+        />
       </View>
+
+      {/* ✅ Reusable Modal */}
+      <GroupEditModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSave={handleSaveGroup}
+        initialGroupName=""
+        initialCurrency=""
+        mode="add" // ✅ explicitly pass
+      />
     </ImageBackground>
   );
 }
 
-export default function HomeScreen() {
-  return (
-    <SafeAreaProvider>
-      <HomeScreenInner />
-    </SafeAreaProvider>
-  );
+export default function HomeScreen(props) {
+  return <HomeScreenInner {...props} />;
 }
 
 const styles = StyleSheet.create({
@@ -247,5 +307,106 @@ const styles = StyleSheet.create({
     height: 16,
     marginLeft: 6,
     resizeMode: 'contain',
+  },
+  background: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  header: {
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  text: {
+    fontSize: 27,
+    fontWeight: 'bold',
+    marginHorizontal: 12,
+    color: 'rgb(55,125,253)',
+  },
+  addButton: {
+    backgroundColor: 'rgb(55,125,253)',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginTop: 100,
+  },
+  addButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '85%',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 10,
+    marginTop: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 12,
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 15,
+    zIndex: 1,
+  },
+  closeButtonText: {
+    fontSize: 34,
+    color: '#999',
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    padding: 10,
+  },
+  dropdownList: {
+    maxHeight: 120,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginTop: 5,
+    borderRadius: 6,
+  },
+  dropdownItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  addButtonModal: {
+    backgroundColor: 'rgb(55,125,253)',
+    padding: 10,
+    marginTop: 20,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  popoverItemSelected: {
+    backgroundColor: 'rgb(225,240,255)', // light blue
+  },
+
+  popoverTextSelected: {
+    fontWeight: 'bold',
+    color: 'rgb(55,125,253)',
   },
 });

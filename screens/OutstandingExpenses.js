@@ -1,45 +1,7 @@
 import React from 'react';
 import {View, Text, StyleSheet, FlatList} from 'react-native';
 
-const originalExpenses = [
-  {
-    id: '1',
-    name: 'Dinner at Tehta',
-    amount: 450,
-    currency: '₹ INR',
-    date: '2025-06-20',
-  },
-  {
-    id: '2',
-    name: 'Movie Night',
-    amount: 320,
-    currency: '₹ INR',
-    date: '2025-06-19',
-  },
-  {
-    id: '3',
-    name: 'Groceries',
-    amount: 780,
-    currency: '₹ INR',
-    date: '2025-06-18',
-  },
-  {
-    id: '4',
-    name: 'Petrol',
-    amount: 1200,
-    currency: '₹ INR',
-    date: '2025-06-15',
-  },
-  {
-    id: '5',
-    name: 'Snacks',
-    amount: 150,
-    currency: '₹ INR',
-    date: '2025-06-10',
-  },
-];
-
-export default function OutstandingExpenses({sortValue}) {
+export default function OutstandingExpenses({sortValue, expenses}) {
   const formatDate = dateStr => {
     const options = {day: '2-digit', month: 'short', year: 'numeric'};
     return new Date(dateStr)
@@ -48,15 +10,15 @@ export default function OutstandingExpenses({sortValue}) {
   };
 
   const getSortedExpenses = () => {
-    const expenses = [...originalExpenses];
+    const sorted = [...expenses];
     if (sortValue === 'date_asc') {
-      expenses.sort((a, b) => new Date(a.date) - new Date(b.date));
+      sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
     } else if (sortValue === 'date_desc') {
-      expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+      sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
     } else if (sortValue === 'name') {
-      expenses.sort((a, b) => a.name.localeCompare(b.name));
+      sorted.sort((a, b) => a.name.localeCompare(b.name));
     }
-    return expenses;
+    return sorted;
   };
 
   const renderItem = ({item}) => (
@@ -76,12 +38,18 @@ export default function OutstandingExpenses({sortValue}) {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={getSortedExpenses()}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-      />
+      {getSortedExpenses().length === 0 ? (
+        <Text style={{textAlign: 'center', marginTop: 20, color: '#777'}}>
+          No outstanding expenses found.
+        </Text>
+      ) : (
+        <FlatList
+          data={getSortedExpenses() || []}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+        />
+      )}
     </View>
   );
 }
@@ -90,9 +58,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingBottom: 16,
-    paddingHorizontal: 14,
-    backgroundColor: 'transperant',
-    // backgroundColor: 'rgb(197,227,255)',
+    paddingRight: 5,
+    paddingLeft: 14,
+    backgroundColor: 'transparent',
+    // backgroundColor: 'rgb(197, 255, 203)',
   },
   list: {
     paddingBottom: 20,
@@ -103,6 +72,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     marginBottom: 12,
+    marginRight: 10,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: {width: 0, height: 2},
